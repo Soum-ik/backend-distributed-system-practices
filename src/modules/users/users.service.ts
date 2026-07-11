@@ -1,5 +1,6 @@
 import { getSql } from '../../db/client.ts';
 import { AppError } from '../../utils/AppError.ts';
+import { hashPassword, normalizePassword } from '../../utils/password.ts';
 
 export interface User {
   id: string;
@@ -14,6 +15,7 @@ export interface User {
 export interface CreateUserInput {
   email: string;
   username: string;
+  password: string;
   name?: string | null;
   bio?: string | null;
   avatarUrl?: string | null;
@@ -70,12 +72,13 @@ export const usersService = {
   async create(input: CreateUserInput): Promise<User> {
     const email = normalizeEmail(input.email);
     const username = normalizeUsername(input.username);
+    const passwordHash = await hashPassword(normalizePassword(input.password));
 
     const sql = getSql();
     try {
       const [row] = await sql`
-        INSERT INTO users (email, username, name, bio, avatar_url)
-        VALUES (${email}, ${username}, ${input.name ?? null}, ${input.bio ?? null}, ${input.avatarUrl ?? null})
+        INSERT INTO users (email, username, name, bio, avatar_url, password_hash)
+        VALUES (${email}, ${username}, ${input.name ?? null}, ${input.bio ?? null}, ${input.avatarUrl ?? null}, ${passwordHash})
         RETURNING id, email, username, name, bio, avatar_url, created_at
       `;
       return toUser(row as UserRow);

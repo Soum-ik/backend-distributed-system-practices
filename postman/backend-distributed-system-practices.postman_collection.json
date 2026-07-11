@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "backend-distributed-system-practices API",
-    "description": "Auto-generated from codebase. Generated: 2026-07-11T15:38:40Z.\n\n## Setup\n1. Set `baseUrl` (default: http://localhost:3000)\n2. Create a user via POST /api/users and set `userId` to the returned id\n3. Endpoints that require an acting user send `x-user-id: {{userId}}`",
+    "description": "Auto-generated from codebase. Generated: 2026-07-11T16:17:36Z.\n\n## Setup\n1. Set `baseUrl` (default: http://localhost:3000)\n2. Register or login via `/api/auth/register` or `/api/auth/login`\n3. Set `authToken` and `userId` from the response\n4. Protected endpoints send `Authorization: Bearer {{authToken}}`",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -11,10 +11,16 @@
       "type": "string"
     },
     {
+      "key": "authToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT from auth register/login"
+    },
+    {
       "key": "userId",
       "value": "1",
       "type": "string",
-      "description": "Acting user ID (example)"
+      "description": "Authenticated user ID (example)"
     },
     {
       "key": "postId",
@@ -102,10 +108,10 @@
       ]
     },
     {
-      "name": "Users",
+      "name": "Auth",
       "item": [
         {
-          "name": "POST /api/users",
+          "name": "POST /api/auth/register",
           "request": {
             "method": "POST",
             "header": [
@@ -115,19 +121,20 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/users",
+              "raw": "{{baseUrl}}/api/auth/register",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "users"
+                "auth",
+                "register"
               ]
             },
-            "description": "Register a new user. Email and username must be unique.",
+            "description": "Register a new user with email, username, and password.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"username\": \"alice\",\n  \"name\": \"Alice\",\n  \"bio\": \"Hello world\"\n}",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"username\": \"alice\",\n  \"password\": \"password123\",\n  \"name\": \"Alice\",\n  \"bio\": \"Hello world\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -148,8 +155,9 @@
                   "    pm.response.to.be.json;",
                   "});",
                   "const json = pm.response.json();",
-                  "pm.test(\"Has id\", function () { pm.expect(json).to.have.property(\"id\"); });",
-                  "if (json.id) pm.collectionVariables.set('userId', json.id);"
+                  "pm.test(\"Has token\", function () { pm.expect(json).to.have.property(\"token\"); });",
+                  "if (json.token) pm.collectionVariables.set('authToken', json.token);",
+                  "if (json.user && json.user.id) pm.collectionVariables.set('userId', json.user.id);"
                 ]
               }
             }
@@ -166,24 +174,187 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": \"1\",\n  \"email\": \"alice@example.com\",\n  \"username\": \"alice\",\n  \"name\": \"Alice\",\n  \"bio\": null,\n  \"avatarUrl\": null,\n  \"createdAt\": \"2026-07-11T15:00:00.000Z\"\n}",
+              "body": "{\n  \"user\": {\n    \"id\": \"1\",\n    \"email\": \"alice@example.com\",\n    \"username\": \"alice\",\n    \"name\": \"Alice\",\n    \"bio\": null,\n    \"avatarUrl\": null,\n    \"createdAt\": \"2026-07-11T15:00:00.000Z\"\n  },\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}",
               "originalRequest": {
                 "method": "POST",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/api/users",
+                  "raw": "{{baseUrl}}/api/auth/register",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
-                    "users"
+                    "auth",
+                    "register"
                   ]
                 }
               }
             }
           ]
         },
+        {
+          "name": "POST /api/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login with email or username and password.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"alice@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response is JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json.token) pm.collectionVariables.set('authToken', json.token);",
+                  "if (json.user && json.user.id) pm.collectionVariables.set('userId', json.user.id);"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Example",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"user\": {\n    \"id\": \"1\",\n    \"email\": \"alice@example.com\",\n    \"username\": \"alice\",\n    \"name\": \"Alice\",\n    \"bio\": null,\n    \"avatarUrl\": null,\n    \"createdAt\": \"2026-07-11T15:00:00.000Z\"\n  },\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/auth/me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Return the authenticated user's profile."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response is JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "Example",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1\",\n  \"email\": \"alice@example.com\",\n  \"username\": \"alice\",\n  \"name\": \"Alice\",\n  \"bio\": null,\n  \"avatarUrl\": null,\n  \"createdAt\": \"2026-07-11T15:00:00.000Z\"\n}",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
         {
           "name": "GET /api/users",
           "request": {
@@ -414,6 +585,11 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -434,7 +610,7 @@
                 }
               ]
             },
-            "description": "Update profile fields (name, bio, avatarUrl).",
+            "description": "Update your own profile fields (name, bio, avatarUrl). Requires auth.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Alice Updated\",\n  \"bio\": \"New bio\"\n}",
@@ -507,9 +683,9 @@
                 "value": "application/json"
               },
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -522,7 +698,7 @@
                 "posts"
               ]
             },
-            "description": "Create a post. Requires acting user via x-user-id, body.userId, or query.userId.",
+            "description": "Create a post. Requires Bearer token.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"body\": \"Hello world!\"\n}",
@@ -587,9 +763,13 @@
             "method": "GET",
             "header": [
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -828,9 +1008,13 @@
             "method": "DELETE",
             "header": [
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -874,9 +1058,13 @@
             "method": "POST",
             "header": [
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -954,9 +1142,13 @@
             "method": "DELETE",
             "header": [
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -1039,9 +1231,13 @@
             "method": "POST",
             "header": [
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -1119,9 +1315,13 @@
             "method": "DELETE",
             "header": [
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -1445,93 +1645,18 @@
       "name": "Notifications",
       "item": [
         {
-          "name": "POST /api/notifications",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/notifications",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "notifications"
-              ]
-            },
-            "description": "Create a notification. Types: follow, like, mention, reply.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"recipientId\": \"2\",\n  \"actorId\": \"1\",\n  \"type\": \"follow\",\n  \"entityId\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 201\", function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});",
-                  "pm.test(\"Response is JSON\", function () {",
-                  "    pm.response.to.be.json;",
-                  "});",
-                  "const json = pm.response.json();",
-                  "if (json.id) pm.collectionVariables.set('notificationId', json.id);"
-                ]
-              }
-            }
-          ],
-          "response": [
-            {
-              "name": "Example",
-              "status": "Created",
-              "code": 201,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"id\": \"1\",\n  \"recipientId\": \"2\",\n  \"actorId\": \"1\",\n  \"type\": \"follow\",\n  \"entityId\": null,\n  \"readAt\": null,\n  \"createdAt\": \"2026-07-11T15:00:00.000Z\"\n}",
-              "originalRequest": {
-                "method": "POST",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/notifications",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "notifications"
-                  ]
-                }
-              }
-            }
-          ]
-        },
-        {
           "name": "GET /api/notifications",
           "request": {
             "method": "GET",
             "header": [
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -1562,7 +1687,7 @@
                 }
               ]
             },
-            "description": "List notifications for the acting user."
+            "description": "List notifications for the authenticated user. Follow/like events are created automatically."
           },
           "event": [
             {
@@ -1616,9 +1741,13 @@
             "method": "GET",
             "header": [
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -1687,9 +1816,13 @@
             "method": "POST",
             "header": [
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {
@@ -1758,9 +1891,13 @@
             "method": "POST",
             "header": [
               {
-                "key": "x-user-id",
-                "value": "{{userId}}",
-                "description": "Acting user ID"
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "description": "JWT from /api/auth/login or /api/auth/register"
               }
             ],
             "url": {

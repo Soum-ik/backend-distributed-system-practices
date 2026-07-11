@@ -55,6 +55,22 @@ export function assertType(type: unknown): NotificationType {
 }
 
 export const notificationsService = {
+  async emitFollow(actorId: string, recipientId: string): Promise<void> {
+    try {
+      await this.create({ recipientId, actorId, type: 'follow' });
+    } catch {
+      // Notification delivery must not block the primary action.
+    }
+  },
+
+  async emitLike(actorId: string, recipientId: string, postId: string): Promise<void> {
+    try {
+      await this.create({ recipientId, actorId, type: 'like', entityId: postId });
+    } catch {
+      // Notification delivery must not block the primary action.
+    }
+  },
+
   async create(input: CreateNotificationInput): Promise<Notification> {
     const type = assertType(input.type);
     if (!input.recipientId) throw new AppError('recipientId is required', 400);

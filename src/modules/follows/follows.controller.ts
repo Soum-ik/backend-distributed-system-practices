@@ -1,12 +1,6 @@
 import type { Request, Response } from 'express';
 import { followsService } from './follows.service.ts';
-import { AppError } from '../../utils/AppError.ts';
-
-function requireActor(req: Request): string {
-  const id = req.body?.userId ?? req.query.userId ?? req.header('x-user-id');
-  if (!id) throw new AppError('userId is required (body, query, or x-user-id header)', 400);
-  return String(id);
-}
+import { getUserId } from '../../middlewares/authenticate.ts';
 
 function pagination(req: Request) {
   return {
@@ -17,12 +11,12 @@ function pagination(req: Request) {
 
 export const followsController = {
   async follow(req: Request, res: Response) {
-    const followerId = requireActor(req);
+    const followerId = getUserId(req);
     res.status(201).json(await followsService.follow(followerId, String(req.params.id)));
   },
 
   async unfollow(req: Request, res: Response) {
-    const followerId = requireActor(req);
+    const followerId = getUserId(req);
     res.json(await followsService.unfollow(followerId, String(req.params.id)));
   },
 

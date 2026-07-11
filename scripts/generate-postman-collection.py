@@ -68,12 +68,12 @@ def req(
     query: Optional[List[Dict]] = None,
     body_raw: Optional[str] = None,
     path_vars: Optional[List[Dict]] = None,
-    actor: bool = False,
+    auth: bool = False,
     test_extra: Optional[List[str]] = None,
 ) -> Dict:
-    headers = [{"key": "Content-Type", "value": "application/json"}] if body_raw else []
-    if actor:
-        headers.append({"key": "x-user-id", "value": "{{userId}}", "description": "Acting user ID"})
+    headers = [{"key": "Content-Type", "value": "application/json"}] if body_raw or auth else []
+    if auth:
+        headers.append({"key": "Authorization", "value": "Bearer {{authToken}}", "description": "JWT from /api/auth/login or /api/auth/register"})
     request: Dict = {
         "method": method,
         "header": headers,
@@ -104,14 +104,16 @@ collection = {
             f"Auto-generated from codebase. Generated: {GENERATED}.\n\n"
             "## Setup\n"
             "1. Set `baseUrl` (default: http://localhost:3000)\n"
-            "2. Create a user via POST /api/users and set `userId` to the returned id\n"
-            "3. Endpoints that require an acting user send `x-user-id: {{userId}}`"
+            "2. Register or login via `/api/auth/register` or `/api/auth/login`\n"
+            "3. Set `authToken` and `userId` from the response\n"
+            "4. Protected endpoints send `Authorization: Bearer {{authToken}}`"
         ),
         "schema": SCHEMA,
     },
     "variable": [
         {"key": "baseUrl", "value": "http://localhost:3000", "type": "string"},
-        {"key": "userId", "value": "1", "type": "string", "description": "Acting user ID (example)"},
+        {"key": "authToken", "value": "", "type": "string", "description": "JWT from auth register/login"},
+        {"key": "userId", "value": "1", "type": "string", "description": "Authenticated user ID (example)"},
         {"key": "postId", "value": "1", "type": "string", "description": "Post ID (example)"},
         {"key": "notificationId", "value": "1", "type": "string", "description": "Notification ID (example)"},
     ],
@@ -135,22 +137,51 @@ collection = {
             ],
         },
         {
-            "name": "Users",
+            "name": "Auth",
             "item": [
                 req(
-                    "POST /api/users",
+                    "POST /api/auth/register",
                     "POST",
-                    "api/users",
-                    "Register a new user. Email and username must be unique.",
+                    "api/auth/register",
+                    "Register a new user with email, username, and password.",
                     201,
-                    '{\n  "id": "1",\n  "email": "alice@example.com",\n  "username": "alice",\n  "name": "Alice",\n  "bio": null,\n  "avatarUrl": null,\n  "createdAt": "2026-07-11T15:00:00.000Z"\n}',
-                    body_raw='{\n  "email": "alice@example.com",\n  "username": "alice",\n  "name": "Alice",\n  "bio": "Hello world"\n}',
+                    '{\n  "user": {\n    "id": "1",\n    "email": "alice@example.com",\n    "username": "alice",\n    "name": "Alice",\n    "bio": null,\n    "avatarUrl": null,\n    "createdAt": "2026-07-11T15:00:00.000Z"\n  },\n  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."\n}',
+                    body_raw='{\n  "email": "alice@example.com",\n  "username": "alice",\n  "password": "password123",\n  "name": "Alice",\n  "bio": "Hello world"\n}',
                     test_extra=[
                         "const json = pm.response.json();",
-                        'pm.test("Has id", function () { pm.expect(json).to.have.property("id"); });',
-                        "if (json.id) pm.collectionVariables.set('userId', json.id);",
+                        'pm.test("Has token", function () { pm.expect(json).to.have.property("token"); });',
+                        "if (json.token) pm.collectionVariables.set('authToken', json.token);",
+                        "if (json.user && json.user.id) pm.collectionVariables.set('userId', json.user.id);",
                     ],
                 ),
+                req(
+                    "POST /api/auth/login",
+                    "POST",
+                    "api/auth/login",
+                    "Login with email or username and password.",
+                    200,
+                    '{\n  "user": {\n    "id": "1",\n    "email": "alice@example.com",\n    "username": "alice",\n    "name": "Alice",\n    "bio": null,\n    "avatarUrl": null,\n    "createdAt": "2026-07-11T15:00:00.000Z"\n  },\n  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."\n}',
+                    body_raw='{\n  "login": "alice@example.com",\n  "password": "password123"\n}',
+                    test_extra=[
+                        "const json = pm.response.json();",
+                        "if (json.token) pm.collectionVariables.set('authToken', json.token);",
+                        "if (json.user && json.user.id) pm.collectionVariables.set('userId', json.user.id);",
+                    ],
+                ),
+                req(
+                    "GET /api/auth/me",
+                    "GET",
+                    "api/auth/me",
+                    "Return the authenticated user's profile.",
+                    200,
+                    '{\n  "id": "1",\n  "email": "alice@example.com",\n  "username": "alice",\n  "name": "Alice",\n  "bio": null,\n  "avatarUrl": null,\n  "createdAt": "2026-07-11T15:00:00.000Z"\n}',
+                    auth=True,
+                ),
+            ],
+        },
+        {
+            "name": "Users",
+            "item": [
                 req(
                     "GET /api/users",
                     "GET",
@@ -188,11 +219,12 @@ collection = {
                     "PATCH /api/users/:id",
                     "PATCH",
                     "api/users/:id",
-                    "Update profile fields (name, bio, avatarUrl).",
+                    "Update your own profile fields (name, bio, avatarUrl). Requires auth.",
                     200,
                     '{\n  "id": "1",\n  "email": "alice@example.com",\n  "username": "alice",\n  "name": "Alice Updated",\n  "bio": "New bio",\n  "avatarUrl": null,\n  "createdAt": "2026-07-11T15:00:00.000Z"\n}',
                     path_vars=[{"key": "id", "value": "{{userId}}", "description": "User UUID"}],
                     body_raw='{\n  "name": "Alice Updated",\n  "bio": "New bio"\n}',
+                    auth=True,
                 ),
             ],
         },
@@ -203,11 +235,11 @@ collection = {
                     "POST /api/posts",
                     "POST",
                     "api/posts",
-                    "Create a post. Requires acting user via x-user-id, body.userId, or query.userId.",
+                    "Create a post. Requires Bearer token.",
                     201,
                     '{\n  "id": "1",\n  "authorId": "1",\n  "body": "Hello world!",\n  "likeCount": 0,\n  "createdAt": "2026-07-11T15:00:00.000Z"\n}',
                     body_raw='{\n  "body": "Hello world!"\n}',
-                    actor=True,
+                    auth=True,
                     test_extra=[
                         "const json = pm.response.json();",
                         "if (json.id) pm.collectionVariables.set('postId', json.id);",
@@ -224,7 +256,7 @@ collection = {
                         {"key": "limit", "value": "20", "description": "Max 100"},
                         {"key": "offset", "value": "0", "description": "Pagination offset"},
                     ],
-                    actor=True,
+                    auth=True,
                 ),
                 req(
                     "GET /api/posts/author/:authorId",
@@ -254,7 +286,7 @@ collection = {
                     "api/posts/:id",
                     "Delete a post. Only the author may delete.",
                     204,
-                    actor=True,
+                    auth=True,
                     path_vars=[{"key": "id", "value": "{{postId}}", "description": "Post ID"}],
                 ),
                 req(
@@ -264,7 +296,7 @@ collection = {
                     "Like a post (idempotent).",
                     200,
                     '{\n  "liked": true,\n  "likeCount": 1\n}',
-                    actor=True,
+                    auth=True,
                     path_vars=[{"key": "id", "value": "{{postId}}", "description": "Post ID"}],
                 ),
                 req(
@@ -274,7 +306,7 @@ collection = {
                     "Remove a like from a post.",
                     200,
                     '{\n  "likeCount": 0\n}',
-                    actor=True,
+                    auth=True,
                     path_vars=[{"key": "id", "value": "{{postId}}", "description": "Post ID"}],
                 ),
             ],
@@ -289,7 +321,7 @@ collection = {
                     "Follow another user. Cannot follow yourself.",
                     201,
                     '{\n  "following": true\n}',
-                    actor=True,
+                    auth=True,
                     path_vars=[{"key": "id", "value": "2", "description": "User ID to follow (example)"}],
                 ),
                 req(
@@ -299,7 +331,7 @@ collection = {
                     "Unfollow a user.",
                     200,
                     '{\n  "following": false\n}',
-                    actor=True,
+                    auth=True,
                     path_vars=[{"key": "id", "value": "2", "description": "User ID to unfollow (example)"}],
                 ),
                 req(
@@ -343,23 +375,10 @@ collection = {
             "name": "Notifications",
             "item": [
                 req(
-                    "POST /api/notifications",
-                    "POST",
-                    "api/notifications",
-                    "Create a notification. Types: follow, like, mention, reply.",
-                    201,
-                    '{\n  "id": "1",\n  "recipientId": "2",\n  "actorId": "1",\n  "type": "follow",\n  "entityId": null,\n  "readAt": null,\n  "createdAt": "2026-07-11T15:00:00.000Z"\n}',
-                    body_raw='{\n  "recipientId": "2",\n  "actorId": "1",\n  "type": "follow",\n  "entityId": null\n}',
-                    test_extra=[
-                        "const json = pm.response.json();",
-                        "if (json.id) pm.collectionVariables.set('notificationId', json.id);",
-                    ],
-                ),
-                req(
                     "GET /api/notifications",
                     "GET",
                     "api/notifications",
-                    "List notifications for the acting user.",
+                    "List notifications for the authenticated user. Follow/like events are created automatically.",
                     200,
                     '[\n  {\n    "id": "1",\n    "recipientId": "1",\n    "actorId": "2",\n    "type": "like",\n    "entityId": "5",\n    "readAt": null,\n    "createdAt": "2026-07-11T15:00:00.000Z"\n  }\n]',
                     query=[
@@ -367,7 +386,7 @@ collection = {
                         {"key": "limit", "value": "20", "description": "Max 100"},
                         {"key": "offset", "value": "0", "description": "Pagination offset"},
                     ],
-                    actor=True,
+                    auth=True,
                 ),
                 req(
                     "GET /api/notifications/unread-count",
@@ -376,7 +395,7 @@ collection = {
                     "Count unread notifications for the acting user.",
                     200,
                     '{\n  "unread": 3\n}',
-                    actor=True,
+                    auth=True,
                 ),
                 req(
                     "POST /api/notifications/read-all",
@@ -385,7 +404,7 @@ collection = {
                     "Mark all notifications as read for the acting user.",
                     200,
                     '{\n  "updated": 3\n}',
-                    actor=True,
+                    auth=True,
                 ),
                 req(
                     "POST /api/notifications/:id/read",
@@ -394,7 +413,7 @@ collection = {
                     "Mark a single notification as read.",
                     200,
                     '{\n  "id": "1",\n  "recipientId": "1",\n  "actorId": "2",\n  "type": "like",\n  "entityId": "5",\n  "readAt": "2026-07-11T15:00:00.000Z",\n  "createdAt": "2026-07-11T14:00:00.000Z"\n}',
-                    actor=True,
+                    auth=True,
                     path_vars=[{"key": "id", "value": "{{notificationId}}", "description": "Notification ID"}],
                 ),
             ],

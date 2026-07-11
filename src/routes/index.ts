@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import healthRoutes from '../modules/health/health.routes.ts';
+import authRoutes from '../modules/auth/auth.routes.ts';
 import usersRoutes from '../modules/users/users.routes.ts';
 import postsRoutes from '../modules/posts/posts.routes.ts';
 import followsRoutes from '../modules/follows/follows.routes.ts';
@@ -11,6 +12,7 @@ const router = Router();
 
 // Register feature modules here.
 router.use('/health', healthRoutes);
+router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
 router.use('/posts', postsRoutes);
 // Follow graph endpoints hang off individual users: /users/:id/follow, etc.

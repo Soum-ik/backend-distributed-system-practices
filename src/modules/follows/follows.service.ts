@@ -1,5 +1,6 @@
 import { getSql } from '../../db/client.ts';
 import { AppError } from '../../utils/AppError.ts';
+import { notificationsService } from '../notifications/notifications.service.ts';
 
 export interface FollowCounts {
   followers: number;
@@ -42,10 +43,13 @@ export const followsService = {
     assertDistinct(followerId, followeeId);
     const sql = getSql();
     try {
-      await sql`
+      const inserted = await sql`
         INSERT INTO follows (follower_id, followee_id)
-        VALUES (${followerId}, ${followeeId}) ON CONFLICT DO NOTHING
+        VALUES (${followerId}, ${followeeId}) ON CONFLICT DO NOTHING RETURNING follower_id
       `;
+      if (inserted.length > 0) {
+        await notificationsService.emitFollow(followerId, followeeId);
+      }
     } catch (err) {
       if (err instanceof Error && /foreign key/i.test(err.message)) {
         throw new AppError('user does not exist', 404);

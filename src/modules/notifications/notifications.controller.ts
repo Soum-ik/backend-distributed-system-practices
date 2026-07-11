@@ -1,20 +1,10 @@
 import type { Request, Response } from 'express';
 import { notificationsService } from './notifications.service.ts';
-import { AppError } from '../../utils/AppError.ts';
-
-function requireActor(req: Request): string {
-  const id = req.query.userId ?? req.body?.userId ?? req.header('x-user-id');
-  if (!id) throw new AppError('userId is required (query, body, or x-user-id header)', 400);
-  return String(id);
-}
+import { getUserId } from '../../middlewares/authenticate.ts';
 
 export const notificationsController = {
-  async create(req: Request, res: Response) {
-    res.status(201).json(await notificationsService.create(req.body ?? {}));
-  },
-
   async list(req: Request, res: Response) {
-    const recipientId = requireActor(req);
+    const recipientId = getUserId(req);
     res.json(
       await notificationsService.list(recipientId, {
         unreadOnly: req.query.unread === 'true',
@@ -25,14 +15,14 @@ export const notificationsController = {
   },
 
   async unreadCount(req: Request, res: Response) {
-    res.json({ unread: await notificationsService.unreadCount(requireActor(req)) });
+    res.json({ unread: await notificationsService.unreadCount(getUserId(req)) });
   },
 
   async markRead(req: Request, res: Response) {
-    res.json(await notificationsService.markRead(String(req.params.id), requireActor(req)));
+    res.json(await notificationsService.markRead(String(req.params.id), getUserId(req)));
   },
 
   async markAllRead(req: Request, res: Response) {
-    res.json(await notificationsService.markAllRead(requireActor(req)));
+    res.json(await notificationsService.markAllRead(getUserId(req)));
   },
 };

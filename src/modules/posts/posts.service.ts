@@ -1,5 +1,6 @@
 import { getSql } from '../../db/client.ts';
 import { AppError } from '../../utils/AppError.ts';
+import { notificationsService } from '../notifications/notifications.service.ts';
 
 export interface Post {
   id: string;
@@ -102,15 +103,18 @@ export const postsService = {
 
   async like(postId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
     const sql = getSql();
+    const [post] = await sql`SELECT author_id FROM posts WHERE id = ${postId}`;
+    if (!post) throw new AppError('post not found', 404);
+
     const inserted = await sql`
       INSERT INTO post_likes (post_id, user_id) VALUES (${postId}, ${userId})
       ON CONFLICT DO NOTHING RETURNING post_id
     `;
     if (inserted.length > 0) {
       await sql`UPDATE posts SET like_count = like_count + 1 WHERE id = ${postId}`;
+      await notificationsService.emitLike(userId, String(post.author_id), postId);
     }
     const [row] = await sql`SELECT like_count FROM posts WHERE id = ${postId}`;
-    if (!row) throw new AppError('post not found', 404);
     return { liked: inserted.length > 0, likeCount: Number(row.like_count) };
   },
 

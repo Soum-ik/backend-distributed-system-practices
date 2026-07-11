@@ -1,12 +1,9 @@
 import type { Request, Response } from 'express';
 import { usersService } from './users.service.ts';
+import { getUserId } from '../../middlewares/authenticate.ts';
+import { AppError } from '../../utils/AppError.ts';
 
 export const usersController = {
-  async create(req: Request, res: Response) {
-    const user = await usersService.create(req.body ?? {});
-    res.status(201).json(user);
-  },
-
   async list(req: Request, res: Response) {
     const limit = Math.min(Number(req.query.limit) || 20, 100);
     const offset = Number(req.query.offset) || 0;
@@ -22,6 +19,10 @@ export const usersController = {
   },
 
   async update(req: Request, res: Response) {
-    res.json(await usersService.update(String(req.params.id), req.body ?? {}));
+    const userId = getUserId(req);
+    if (String(req.params.id) !== userId) {
+      throw new AppError('you can only update your own profile', 403);
+    }
+    res.json(await usersService.update(userId, req.body ?? {}));
   },
 };
