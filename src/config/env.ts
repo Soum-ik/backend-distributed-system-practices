@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 // Bun automatically loads .env, so no dotenv needed.
 
 export const env = {
