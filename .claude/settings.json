@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun test)",
+      "Bash(bun test:*)",
+      "Bash(bun run dev)",
+      "Bash(bun run start)",
+      "Bash(bun install)",
+      "Bash(bun install:*)",
+      "Bash(bun run:*)",
+      "Bash(bun x tsc:*)",
+      "Bash(git status)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Read(//Users/soumiksarkar/Documents/codeing/Projects/backend-distributed-system-practices/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"$CLAUDE_PROJECT_DIR/.claude/hooks/commit-guard.ts\""
+          }
+        ]
+      }
+    ]
+  }
+}
