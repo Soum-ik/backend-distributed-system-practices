@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "bun --hot src/server.ts",
     "start": "bun src/server.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "db:new": "bun run scripts/new-migration.ts",
+    "db:up": "bun run scripts/migrate.ts up",
+    "db:down": "bun run scripts/migrate.ts down",
+    "db:status": "bun run scripts/migrate.ts status"
   },
   "devDependencies": {
     "@types/bun": "latest",
