@@ -1,4 +1,4 @@
-import { env } from '../config/env.ts';
+import { env } from '../../config/env.ts';
 
 export interface HealthStatus {
   status: 'ok';
