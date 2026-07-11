@@ -5,6 +5,7 @@ import postsRoutes from '../modules/posts/posts.routes.ts';
 import followsRoutes from '../modules/follows/follows.routes.ts';
 import notificationsRoutes from '../modules/notifications/notifications.routes.ts';
 import searchRoutes from '../modules/search/search.routes.ts';
+import analyticsRoutes from '../modules/analytics/analytics.routes.ts';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/posts', postsRoutes);
 router.use('/users', followsRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/search', searchRoutes);
+router.use('/analytics', analyticsRoutes);
 
 export default router;
