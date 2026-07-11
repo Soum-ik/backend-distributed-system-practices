@@ -8,8 +8,9 @@
     "start": "bun src/server.ts",
     "test": "bun test",
     "db:new": "bun run scripts/new-migration.ts",
-    "db:up": "bun run scripts/migrate.ts up",
-    "db:down": "bun run scripts/migrate.ts down",
+    "db:up": "bun run scripts/migrate.ts up && bun run db:dump",
+    "db:down": "bun run scripts/migrate.ts down && bun run db:dump",
+    "db:dump": "bun run scripts/dump-schema.ts",
     "db:status": "bun run scripts/migrate.ts status"
   },
   "devDependencies": {
