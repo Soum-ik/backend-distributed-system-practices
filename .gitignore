@@ -27,6 +27,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .cache
 *.tsbuildinfo
 
+# load-test fixtures (tokens)
+scripts/load-test/fixtures.json
+
 # IntelliJ based IDEs
 .idea
 

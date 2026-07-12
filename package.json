@@ -11,11 +11,18 @@
     "db:up": "bun run scripts/migrate.ts up && bun run db:dump",
     "db:down": "bun run scripts/migrate.ts down && bun run db:dump",
     "db:dump": "bun run scripts/dump-schema.ts",
-    "db:status": "bun run scripts/migrate.ts status"
+    "db:status": "bun run scripts/migrate.ts status",
+    "load-test:setup": "bun run scripts/load-test/setup.ts",
+    "load-test": "bun run scripts/load-test/run-autocannon.ts",
+    "load-test:average": "bun run scripts/load-test/run-autocannon.ts -- --scenario=average",
+    "load-test:peak": "bun run scripts/load-test/run-autocannon.ts -- --scenario=peak",
+    "load-test:commands": "bun run scripts/load-test/run-autocannon.ts -- --dry-run",
+    "load-test:bun": "bun run scripts/load-test/load-test.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/express": "^5.0.6"
+    "@types/express": "^5.0.6",
+    "autocannon": "^8.0.0"
   },
   "peerDependencies": {
     "typescript": "^5"
