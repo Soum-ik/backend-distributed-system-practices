@@ -41,7 +41,7 @@ export const ENDPOINTS: Endpoint[] = [
   { name: 'notifications', group: 'uncachedRead', kind: 'read', method: 'GET', path: '/api/notifications', needsAuth: true, weight: 4 },
   { name: 'unread-count', group: 'uncachedRead', kind: 'read', method: 'GET', path: '/api/notifications/unread-count', needsAuth: true, weight: 1 },
   { name: 'follow-counts', group: 'cachedRead', kind: 'read', method: 'GET', path: '/api/users/:userId/counts', weight: 1 },
-  { name: 'health', group: 'cachedRead', kind: 'read', method: 'GET', path: '/api/health', weight: 1 },
+  // { name: 'health', group: 'cachedRead', kind: 'read', method: 'GET', path: '/api/health', weight: 1 },
   { name: 'auth-me', group: 'cachedRead', kind: 'read', method: 'GET', path: '/api/auth/me', needsAuth: true, weight: 1 },
   { name: 'create-post', group: 'write', kind: 'write', method: 'POST', path: '/api/posts', needsAuth: true, body: '{"body":"autocannon load test"}', weight: 2 },
   { name: 'like-post', group: 'write', kind: 'write', method: 'POST', path: '/api/posts/:postId/like', needsAuth: true, weight: 1 },
